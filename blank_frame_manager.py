@@ -1,6 +1,9 @@
+# copyright "MIT"
+# @jiapeilu 2023
+
 bl_info = {
     "name": "Blank Frame Manager",
-    "blender": (2, 93, 0),
+    "blender": (4, 0, 0),
     "category": "Animation",
 }
 
@@ -87,43 +90,102 @@ class WM_OT_RemoveBlankFrame(bpy.types.Operator):
             context.scene.frame_set(current_frame - offset)
         return {'FINISHED'}
 
+
+
+class WM_OT_KeyingUnlocked(bpy.types.Operator):
+    bl_idname = "wm.keying_unlocked"
+    bl_label = "Key Unlocked"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+        # Check if we are in Pose Mode
+        if bpy.context.mode == 'POSE':
+            # Assume 'armature' is the armature object
+            armature = bpy.context.active_object
+            # Iterate through selected bones
+            for bone in bpy.context.selected_pose_bones:
+                # Access the pose bone
+                pose_bone = armature.pose.bones.get(bone.name)
+                # Add non-locked attributes to the keying set
+                self.add_non_locked_attributes_to_keying_set(pose_bone)
+        else:
+            for obj in bpy.context.selected_objects:
+                self.add_non_locked_attributes_to_keying_set(obj)
+        return {'FINISHED'}
+    
+    # Function to add non-locked attributes to a keying set
+    def add_non_locked_attributes_to_keying_set(self, bone):
+        #axis
+        X =0
+        Y =1
+        Z =2
+        axis = [X,Y,Z]
+
+        nonLock=[]
+        for index_axis in axis:
+            #Location
+            if not bone.lock_location[index_axis]:
+                nonLock.append(['location',index_axis])
+            #Scale
+            if not bone.lock_scale[index_axis]:
+                nonLock.append(['scale',index_axis])
+                
+        #Rotation
+        if bone.rotation_mode == "QUATERNION":
+            for index_axis in axis:
+                if not bone.lock_rotation[index_axis]:
+                    nonLock.append(['rotation_quaternion',index_axis+1])
+            if not bone.lock_rotation_w:
+                    nonLock.append(['rotation_quaternion',0])
+                    
+        elif bone.rotation_mode == "AXIS_ANGLE":
+            for index_axis in axis:
+                if not bone.lock_rotation[index_axis]:
+                    nonLock.append(['rotation_axis_angle',index_axis+1])
+            if not bone.lock_rotation_w:
+                    nonLock.append(['rotation_axis_angle',0])
+                    
+        else:
+            for index_axis in axis:
+                if not bone.lock_rotation[index_axis]:
+                    nonLock.append(['rotation_euler',index_axis])
+
+        if nonLock:
+            # Set the current frame
+            current_frame = bpy.context.scene.frame_current
+
+            for path in nonLock:
+            # Insert a keyframe for 'location.x' at the current frame
+                bone.keyframe_insert(data_path=path[0], index=path[1], frame=current_frame)
+
+
+
 class WM_PT_BlankFrameManagerPanel(bpy.types.Panel):
     bl_label = "Blank Frame Manager"
     bl_idname = "PT_BlankFrameManagerPanel"
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'UI'
-    bl_category = 'Tools'
+    bl_category = 'FrameTools'
 
     def draw(self, context):
         layout = self.layout
         layout.operator("wm.add_blank_frame")
         layout.operator("wm.remove_blank_frame")
-
-addon_keymaps = []
+        layout.operator("wm.keying_unlocked")
 
 def register():
     bpy.utils.register_class(WM_OT_AddBlankFrame)
     bpy.utils.register_class(WM_OT_RemoveBlankFrame)
+    bpy.utils.register_class(WM_OT_KeyingUnlocked)
     bpy.utils.register_class(WM_PT_BlankFrameManagerPanel)
 
-    # Add hotkey
-    kc = bpy.context.window_manager.keyconfigs.addon
-    km = kc.keymaps.new(name='Object', space_type='EMPTY')
-    kmi = km.keymap_items.new('wm.add_blank_frame', 'I', 'PRESS', shift=True)
-    addon_keymaps.append((km, kmi))
-    
-    kmi = km.keymap_items.new('wm.remove_blank_frame', 'I', 'PRESS', shift=True, alt=True)
-    addon_keymaps.append((km, kmi))
 
 def unregister():
     bpy.utils.unregister_class(WM_OT_AddBlankFrame)
     bpy.utils.unregister_class(WM_OT_RemoveBlankFrame)
+    bpy.utils.unregister_class(WM_OT_KeyingUnlocked)
     bpy.utils.unregister_class(WM_PT_BlankFrameManagerPanel)
 
-    # Remove hotkey
-    for km, kmi in addon_keymaps:
-        km.keymap_items.remove(kmi)
-    addon_keymaps.clear()
 
 if __name__ == "__main__":
     register()
