@@ -122,13 +122,10 @@ class WM_OT_KeyingUnlocked(bpy.types.Operator):
         axis = [X,Y,Z]
 
         nonLock=[]
+        #Location
         for index_axis in axis:
-            #Location
             if not bone.lock_location[index_axis]:
                 nonLock.append(['location',index_axis])
-            #Scale
-            if not bone.lock_scale[index_axis]:
-                nonLock.append(['scale',index_axis])
                 
         #Rotation
         if bone.rotation_mode == "QUATERNION":
@@ -149,6 +146,10 @@ class WM_OT_KeyingUnlocked(bpy.types.Operator):
             for index_axis in axis:
                 if not bone.lock_rotation[index_axis]:
                     nonLock.append(['rotation_euler',index_axis])
+        #Scale
+        for index_axis in axis:
+            if not bone.lock_scale[index_axis]:
+                nonLock.append(['scale',index_axis])
 
         if nonLock:
             # Set the current frame
