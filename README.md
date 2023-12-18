@@ -4,8 +4,11 @@ I am new to gitHub. This Add-on is in beta. If you have any question. Kindly let
 /nDemo: https://youtu.be/4FL3Wb2bpNk
 New Updated: Add Keying Unlocked buttom
 
-Hot key suggestions.
-Add blank: Shift + I 
-Remove blank: Shift+Alt+I
-KeyUnlocked: Cmd +I
+Suggestions:
+If you want to use hot key. I found this setting is less changed and suit for animating.
+Add blank: ctrl + Numpad+
+Remove blank: ctrl + Numpad-
+Key Unlocked: ctrl + I
+
+If you are new to blender. you may try the "Blender_blankKey.py". I've setting Object/Pose/Dopesheet/GraphEditor with the hot key below.
 
