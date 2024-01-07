@@ -25,29 +25,32 @@ class WM_OT_AddBlankFrame(bpy.types.Operator):
         if context.mode == 'POSE':
             # Loop through selected bones and shift keyframes by one frame
             for bone in context.selected_pose_bones:
-                context.view_layer.objects.active = context.active_object
                 context.active_object.data.bones.active = context.active_object.data.bones[bone.name]
+                context.view_layer.objects.active = context.active_object
 
                 # Shift keyframes by one frame
-                for fcurve in context.active_object.animation_data.action.fcurves:
-                    for keyframe in fcurve.keyframe_points:
-                        if keyframe.co.x >= current_frame:
-                            keyframe.co.x += offset
+                self.move_keyframes(context.active_object,current_frame,offset)
+                
         else:
             # Loop through selected objects and shift keyframes for the entire object by one frame
             for obj in context.selected_objects:
                 if obj.animation_data is not None and obj.animation_data.action is not None:
-                    context.view_layer.objects.active = obj
-                    bpy.context.view_layer.objects.active = obj  # Set active object for the view layer
+                    # Set active object for the view layer
+                    context.view_layer.objects.active = obj  
                     # Shift keyframes for all fcurves in the object's action
-                    for fcurve in obj.animation_data.action.fcurves:
-                        for keyframe in fcurve.keyframe_points:
-                            if keyframe.co.x >= current_frame:
-                                keyframe.co.x += offset
-
+                    self.move_keyframes(obj,current_frame,offset)
+                        
         # Set the current frame to the next frame
         context.scene.frame_set(current_frame + offset)
         return {'FINISHED'}
+    
+    def move_keyframes(self,obj,current_frame,offset):
+        for fcurve in obj.animation_data.action.fcurves:
+            for keyframe in fcurve.keyframe_points:
+                if keyframe.co.x >= current_frame:
+                    keyframe.co.x += offset
+                    keyframe.handle_left.x += offset
+                    keyframe.handle_right.x += offset        
 
 class WM_OT_RemoveBlankFrame(bpy.types.Operator):
     bl_idname = "wm.remove_blank_frame"
@@ -69,27 +72,26 @@ class WM_OT_RemoveBlankFrame(bpy.types.Operator):
                 context.active_object.data.bones.active = context.active_object.data.bones[bone.name]
 
                 # Shift keyframes back by one frame
-                for fcurve in context.active_object.animation_data.action.fcurves:
-                    for keyframe in fcurve.keyframe_points:
-                        if keyframe.co.x >= current_frame + offset:
-                            keyframe.co.x -= offset
+                self.move_keyframes(context.active_object,current_frame,offset)
+
         else:
             # Loop through selected objects and shift keyframes back by one frame
             for obj in context.selected_objects:
                 if obj.animation_data is not None and obj.animation_data.action is not None:
-                    context.view_layer.objects.active = obj
-                    bpy.context.view_layer.objects.active = obj  # Set active object for the view layer
+                    # Set active object for the view layer
+                    context.view_layer.objects.active = obj  
                     # Shift keyframes back for all fcurves in the object's action
-                    for fcurve in obj.animation_data.action.fcurves:
-                        for keyframe in fcurve.keyframe_points:
-                            if keyframe.co.x >= current_frame + offset:
-                                keyframe.co.x -= offset
+                    self.move_keyframes(obj,current_frame,offset)
 
-        # Remove the current frame (excluding the first frame)
-        if current_frame > 1:
-            context.scene.frame_set(current_frame - offset)
         return {'FINISHED'}
-
+    
+    def move_keyframes(self,obj,current_frame,offset):
+        for fcurve in obj.animation_data.action.fcurves:
+            for keyframe in fcurve.keyframe_points:
+                if keyframe.co.x >= current_frame + offset:
+                    keyframe.co.x -= offset
+                    keyframe.handle_left.x -= offset
+                    keyframe.handle_right.x -= offset 
 
 
 class WM_OT_KeyingUnlocked(bpy.types.Operator):
